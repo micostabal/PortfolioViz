@@ -22,4 +22,7 @@ urlpatterns = [
     path('hello/', views.hello),
     path('mymodel/', views.my_view),
     path('portfolios/', views.get_portfolios),
+    path('assets/', views.get_assets),
+    path('portfolio/<str:portfolio_id>/value', views.get_portfolio_value),
+    path('portfolio/<str:portfolio_id>/weights', views.get_weights),
 ]

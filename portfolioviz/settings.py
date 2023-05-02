@@ -123,3 +123,6 @@ STATIC_URL = '/static/'
 STATIC_DIR_NAME = 'portfolioviz'+STATIC_URL
 
 DATA_PATH_NAME = STATIC_DIR_NAME+"datos.xlsx"
+
+DATE_FORMAT = "%Y-%m-%d"
+

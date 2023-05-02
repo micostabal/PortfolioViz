@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from portfolioviz.models import MyModel
-from portfolioviz.etl import DataExtractor, DataLoader
+from portfolioviz.services import DataExtractor, DataLoader
 
 
 class Command(BaseCommand):
