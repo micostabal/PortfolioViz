@@ -1,16 +1,23 @@
 from datetime import date
-from portfolioviz.models import Asset, Portfolio, PortfolioValue, Weight
+from portfolioviz.models import Asset, Portfolio,\
+  PortfolioValue, Weight, Quantity
 from portfolioviz.constants import INITIAL_DATE
 
-def assets_get():
+def asset_get(asset_name):
+    Asset.objects.get(name=asset_name)
+
+def assets_list():
     assets = Asset.objects.all()
     return list(map(lambda x: x.to_dict(), list(assets)))
 
-def portfolios_get():
+def portfolio_get(name):
+    Portfolio.objects.get(name=name)
+
+def portfolios_list():
     portfolios = Portfolio.objects.all()
     return list(map(lambda x: x.to_dict(), list(portfolios)))
 
-def portfolio_value_get(
+def portfolio_value_list(
         portfolio_id: str, 
         date_from: date,
         date_to: date):
@@ -23,7 +30,13 @@ def portfolio_value_get(
       portfolio=portfolio)
     return list(map(lambda x: x.to_dict(), list(values_raw)))
 
-def weight_get(
+def quantity_get(portfolio, asset):
+    return Quantity.objects.get(
+      portfolio=portfolio,
+      asset=asset
+    )
+
+def weight_list(
         portfolio_id: str,
         date_from: date,
         date_to: date):

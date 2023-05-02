@@ -7,20 +7,6 @@ class PortfolioBaseModelEntity(models.Model):
         app_label = 'portfolioviz'
 
 
-class MyModel(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "description": self.description
-        }
-    
-    class Meta:
-        app_label = 'portfolioviz'
-
-
 class Asset(models.Model):
     name = models.CharField(max_length=30, unique=True)
 

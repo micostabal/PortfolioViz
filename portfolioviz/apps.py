@@ -7,5 +7,3 @@ class PortfolioVizConfig(AppConfig):
     
     def ready(self):
         pass
-        # from portfolioviz.signals import create_mymodel_instances
-        # post_migrate.connect(create_mymodel_instances)

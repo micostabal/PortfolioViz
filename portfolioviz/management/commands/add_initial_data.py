@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from portfolioviz.models import MyModel
+from portfolioviz.models import Portfolio
 from portfolioviz.services import DataExtractor, DataLoader
 
 
@@ -12,7 +12,7 @@ class Command(BaseCommand):
         self.data_loader = DataLoader()
     
     def dataExists(self):
-        return MyModel.objects.exists()
+        return Portfolio.objects.exists()
     
     def handle(self, *args, **options):
         if not self.dataExists():
