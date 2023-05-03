@@ -1,14 +1,19 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
-from portfolioviz.selectors import portfolios_list, assets_list, portfolio_value_list, weight_list
+from portfolioviz.selectors import (
+    portfolios_list,
+    assets_list_response,
+    portfolio_value_list,
+    weight_list
+)
 from portfolioviz.utils import parse_request_date
 
-def pong(request):  
+def pong(request):
     return HttpResponse("<p>Pong</p>")
 
 @csrf_exempt
 def get_assets(request):
-    assets = assets_list()
+    assets = assets_list_response()
     return JsonResponse({
         "instances": assets}, status=200)
 

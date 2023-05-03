@@ -1,9 +1,20 @@
 import pandas as pd
 from typing import List
 from dataclasses import dataclass
-from portfolioviz.models import Asset, \
-  Portfolio, PortfolioValue, Quantity, Weight, Price
-from portfolioviz.selectors import asset_get, portfolio_get, quantity_get
+from portfolioviz.models import (
+  Asset,
+  Portfolio,
+  PortfolioValue,
+  Quantity,
+  Weight,
+  Price
+)
+from portfolioviz.selectors import (
+  asset_get,
+  assets_list,
+  portfolio_get,
+  quantity_get
+)
 from portfolioviz.settings import DATA_PATH_NAME
 
 
@@ -19,10 +30,10 @@ class RawPortfolioData:
 
 
 def quantity_create(portfolio, asset, weight, value, price):
-   Quantity.objects.create(
-            amount=weight * value / price,
-            portfolio=portfolio,
-            asset=asset)
+  Quantity.objects.create(
+    amount=weight * value / price,
+    portfolio=portfolio,
+    asset=asset)
 
 def weight_create(portfolio, asset, date, share, value):
   Weight.objects.create(
@@ -73,6 +84,12 @@ class DataExtractor:
 
 class DataLoader:
 
+  def load_data(self, raw_data : RawPortfolioData) -> None:
+    self.portfolios_load(raw_data)
+    self.assets_load(raw_data)
+    self.quantities_load(raw_data)
+    self.value_weight_price_load(raw_data)
+
   def portfolios_load(self, raw_data : RawPortfolioData):
     for portfolio_name in raw_data.portfolios:
       Portfolio.objects.create(name=portfolio_name)
@@ -84,17 +101,15 @@ class DataLoader:
   def quantities_load(self, raw_data : RawPortfolioData):
      for portfolio_name in raw_data.portfolios:
       portfolio = portfolio_get(portfolio_name)
-
-      for asset_name in raw_data.assets:
-          asset = asset_get(asset_name)
-
-          weight = raw_data.initial_weights.loc[
-             (raw_data.initial_date, asset_name)][portfolio_name]
-          price = raw_data.prices.loc[
-             raw_data.initial_date][asset_name]
-          
-          quantity_create(
-             portfolio, asset, weight, raw_data.initial_value, price)
+      
+      for asset in assets_list():
+        weight = raw_data.initial_weights.loc[
+          (raw_data.initial_date, asset.name)][portfolio_name]
+        price = raw_data.prices.loc[
+          raw_data.initial_date][asset.name]
+        
+        quantity_create(
+          portfolio, asset, weight, raw_data.initial_value, price)
           
   def value_weight_price_load(self, raw_data: RawPortfolioData):
     for portfolio_name in raw_data.portfolios:
@@ -120,11 +135,6 @@ class DataLoader:
           portfolio, value, date)
         
         for asset_name in raw_data.assets:
+            asset = asset_get(asset_name)
             weight_create(
               portfolio, asset, date, x_asset[asset_name], value)
-    
-  def load_data(self, raw_data : RawPortfolioData) -> None:
-    self.portfolios_load(raw_data)
-    self.assets_load(raw_data)
-    self.quantities_load(raw_data)
-    self.value_weight_load()
