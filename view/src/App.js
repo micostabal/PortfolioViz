@@ -19,6 +19,10 @@ const BACKEND_URL = 'http://localhost:8000';
 const START_DEFAULT = '2022-01-01';
 const END_DEFAULT = new Date().toISOString().substring(0, 10);
 
+const inventRandomColor = () => {
+  return '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
+}
+
 const PortfoliosInput = (props) => {
   const {portfolios, onChange} = props;
   return (
@@ -55,69 +59,33 @@ function App() {
   const [endDate, setEndDate] = useState(END_DEFAULT);
   const [portfolios, setPortfolios] = useState([]);
   const [portfolioValues, setPortfolioValues] = useState([]);
-  
-  const data = [
-    {
-      name: 'Page A',
-      uv: 4000,
-      pv: 2400,
-      amt: 2400,
-    },
-    {
-      name: 'Page B',
-      uv: 3000,
-      pv: 1398,
-      amt: 2210,
-    },
-    {
-      name: 'Page C',
-      uv: 2000,
-      pv: 9800,
-      amt: 2290,
-    },
-    {
-      name: 'Page D',
-      uv: 2780,
-      pv: 3908,
-      amt: 2000,
-    },
-    {
-      name: 'Page E',
-      uv: 1890,
-      pv: 4800,
-      amt: 2181,
-    },
-    {
-      name: 'Page F',
-      uv: 2390,
-      pv: 3800,
-      amt: 2500,
-    },
-    {
-      name: 'Page G',
-      uv: 3490,
-      pv: 4300,
-      amt: 2100,
-    },
-    
-  ];
+  const [weights, setWeights] = useState([]);
 
-  useEffect( () => {
+  const fetchPortfolios = () => {
     fetch(BACKEND_URL+'/portfolios/')
       .then(response => response.json())
       .then( ({instances}) => {
         setPortfolios(instances);
-      })
+      });
+  }
+  
+  useEffect( () => {
+    fetchPortfolios();
   }, []);
   
   useEffect(() => {
     fetch(BACKEND_URL+`/portfolio/${portfolioId}/value?from=${startDate}&to=${endDate}`)
-      .then( response => response.json())
+      .then(response => response.json())
       .then(function({values}) {
         setPortfolioValues(values);
       }).catch(function(err) {
         console.log('Fetch Error :-S', err);
-      })
+      });
+    fetch(BACKEND_URL+`/portfolio/${portfolioId}/weights?from=${startDate}&to=${endDate}`)
+      .then(response => response.json())
+      .then(function({weights}) {
+        setWeights(weights);
+      });
   }, [portfolioId, startDate, endDate]);
 
   const tickFormatter = (tickValue) => {
@@ -163,7 +131,10 @@ function App() {
                   tick={{ fontSize: 8, lineHeight: 30 }}
                   margin={{top: 3, bottom: 30}}>
                 </XAxis>
-                <YAxis tickCount={10}></YAxis>
+                <YAxis tickCount={10} domain={[
+                  750000000,
+                  1050000000
+                ]}></YAxis>
                 <Legend />
                 <Tooltip />
                 <Line dataKey="amount"
@@ -187,7 +158,7 @@ function App() {
         <div>
           <ResponsiveContainer width={720} aspect={1}>
             <AreaChart
-              data={data}
+              data={weights}
               margin={{
                 top: 10,
                 right: 30,
@@ -196,12 +167,23 @@ function App() {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <XAxis dataKey="date"/>
+              <YAxis domain={[-0.01, 1.01]} />
               <Tooltip />
-              <Area type="monotone" dataKey="uv" stackId="1" stroke="#8884d8" fill="#8884d8" />
-              <Area type="monotone" dataKey="pv" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-              <Area type="monotone" dataKey="amt" stackId="1" stroke="#ffc658" fill="#ffc658" />
+              {
+                weights.length>0 ? Object.keys(weights[0])
+                  .filter( key => key!=="date")
+                  .map(key => {
+                  const inventedColor = inventRandomColor();
+                  return (<Area
+                    type="monotone"
+                    dataKey={key}
+                    stackId="1"
+                    stroke={inventedColor}
+                    fill={inventedColor}
+                  />)
+                }) : null
+              }
             </AreaChart>
           </ResponsiveContainer>
         </div>
