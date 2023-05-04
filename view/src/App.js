@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
   Line,
-  Label // linted as unnecessary, yet required
+  Label
 } from 'recharts';
 import './App.css';
 
@@ -29,8 +29,8 @@ const PortfoliosInput = (props) => {
     <>
       <label style={{marginLeft: '1em'}} for="portfolio">Choose a portfolio:</label>
       <select  style={{marginLeft: '1em'}} id="portfolio_id" name="portfolio" onChange={onChange}>
-        {portfolios.map( portfolio => {
-          return (<option key={portfolio.name} value={portfolio.id}>{portfolio.name}</option>)
+        {portfolios.map( ({name, id}) => {
+          return (<option key={name} value={id}>{name}</option>)
         })}
       </select>
     </>
@@ -53,6 +53,23 @@ const DateInput = ({name, max, min, onChange}) => {
   )
 }
 
+const fetchPortfolios = async () => {
+  return fetch(BACKEND_URL+'/portfolios/')
+    .then(response => response.json());
+}
+
+const fetchPortfolioValues = async (portfolioId, startDate, endDate) => {
+  return fetch(BACKEND_URL+
+      `/portfolio/${portfolioId}/value?from=${startDate}&to=${endDate}`
+    ).then(response => response.json())
+}
+
+const fetchWeightDistribution = async (portfolioId, startDate, endDate) => {
+  return fetch(BACKEND_URL+
+    `/portfolio/${portfolioId}/weights?from=${startDate}&to=${endDate}`)
+    .then(response => response.json())
+}
+
 function App() {
   const [portfolioId, setPortfolioId] = useState(1);
   const [startDate, setStartDate] = useState(START_DEFAULT);
@@ -60,29 +77,20 @@ function App() {
   const [portfolios, setPortfolios] = useState([]);
   const [portfolioValues, setPortfolioValues] = useState([]);
   const [weights, setWeights] = useState([]);
-
-  const fetchPortfolios = () => {
-    fetch(BACKEND_URL+'/portfolios/')
-      .then(response => response.json())
+  
+  useEffect( () => {
+    fetchPortfolios()
       .then( ({instances}) => {
         setPortfolios(instances);
       });
-  }
-  
-  useEffect( () => {
-    fetchPortfolios();
   }, []);
   
   useEffect(() => {
-    fetch(BACKEND_URL+`/portfolio/${portfolioId}/value?from=${startDate}&to=${endDate}`)
-      .then(response => response.json())
+    fetchPortfolioValues(portfolioId, startDate, endDate)
       .then(function({values}) {
         setPortfolioValues(values);
-      }).catch(function(err) {
-        console.log('Fetch Error :-S', err);
       });
-    fetch(BACKEND_URL+`/portfolio/${portfolioId}/weights?from=${startDate}&to=${endDate}`)
-      .then(response => response.json())
+    fetchWeightDistribution(portfolioId, startDate, endDate)
       .then(function({weights}) {
         setWeights(weights);
       });
@@ -167,7 +175,12 @@ function App() {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date"/>
+              <XAxis
+                dataKey="date"
+                interval={ 32} angle={0}
+                tickFormatter={tickFormatter}
+                tick={{ fontSize: 8, lineHeight: 30 }}
+              />
               <YAxis domain={[-0.01, 1.01]} />
               <Tooltip />
               {
