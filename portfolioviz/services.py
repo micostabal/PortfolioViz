@@ -62,7 +62,10 @@ def price_create(amount, asset, date):
 class DataExtractor:
     
     def extract_data(self) -> RawPortfolioData:
-      df_initial_weights = pd.read_excel(DATA_PATH_NAME, sheet_name='weights')
+      df_initial_weights = pd.read_excel(
+        DATA_PATH_NAME,
+        sheet_name='weights'
+      )
       df_initial_weights.set_index(['Fecha', 'activos'], inplace=True)
       
       df_prices=pd.read_excel(DATA_PATH_NAME, sheet_name='Precios')
