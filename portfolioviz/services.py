@@ -16,6 +16,7 @@ from portfolioviz.selectors import (
   quantity_get
 )
 from portfolioviz.settings import DATA_PATH_NAME
+from portfolioviz.constants import INITIAL_VALUE
 
 
 @dataclass
@@ -70,7 +71,6 @@ class DataExtractor:
       dates = df_prices.index.tolist()
       initial_date = dates[0]
       portfolios = df_initial_weights.columns.tolist()
-      V0 = 1_000_000_000
       
       return RawPortfolioData(
         assets,
@@ -79,7 +79,7 @@ class DataExtractor:
         df_prices,
         dates,
         initial_date,
-        V0)
+        INITIAL_VALUE)
 
 
 class DataLoader:

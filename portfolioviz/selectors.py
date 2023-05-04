@@ -49,11 +49,11 @@ def weight_list(
     date_to: date):
   portfolio = Portfolio.objects.get(id=portfolio_id)
   all_weights = []
-  for asset in Asset.objects.all():
+  for asset in assets_list():
     weights_raw = list(Weight.objects.filter(
       date__range=[
-          date_from if date_from is not None else INITIAL_DATE,
-          date_to if date_to is not None else date.today()
+        date_from if date_from is not None else INITIAL_DATE,
+        date_to if date_to is not None else date.today()
       ],
       portfolio=portfolio,
       asset=asset))

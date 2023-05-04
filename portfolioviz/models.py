@@ -1,14 +1,14 @@
 from django.db import models
 from portfolioviz.settings import DATE_FORMAT
 
-class PortfolioBaseModelEntity(models.Model):
+class PortfolioBaseModel(models.Model):
     
     class Meta:
         app_label = 'portfolioviz'
         abstract=True
 
 
-class Asset(PortfolioBaseModelEntity):
+class Asset(PortfolioBaseModel):
     name = models.CharField(max_length=30, unique=True)
     
     def to_dict(self):
@@ -17,7 +17,7 @@ class Asset(PortfolioBaseModelEntity):
             "name": self.name}
     
 
-class Price(PortfolioBaseModelEntity):
+class Price(PortfolioBaseModel):
     amount = models.DecimalField(decimal_places=6, max_digits=40)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date = models.DateField()
@@ -26,7 +26,7 @@ class Price(PortfolioBaseModelEntity):
         return {"amount": self.amount}
 
 
-class Portfolio(PortfolioBaseModelEntity):
+class Portfolio(PortfolioBaseModel):
     name = models.CharField(max_length=30, unique=True)
     
     def to_dict(self):
@@ -35,7 +35,7 @@ class Portfolio(PortfolioBaseModelEntity):
             "name": self.name}
 
 
-class Quantity(PortfolioBaseModelEntity):
+class Quantity(PortfolioBaseModel):
     amount = models.DecimalField(decimal_places=6, max_digits=40)
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
@@ -44,7 +44,7 @@ class Quantity(PortfolioBaseModelEntity):
         return {"amount": self.amount}
 
 
-class Weight(PortfolioBaseModelEntity):
+class Weight(PortfolioBaseModel):
     amount = models.DecimalField(decimal_places=6, max_digits=40)
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
@@ -57,7 +57,7 @@ class Weight(PortfolioBaseModelEntity):
             "asset_name": self.asset.name}
 
 
-class PortfolioValue(PortfolioBaseModelEntity):
+class PortfolioValue(PortfolioBaseModel):
     amount = models.DecimalField(decimal_places=6, max_digits=40)
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     date = models.DateField()
