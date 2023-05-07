@@ -2,7 +2,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from portfolioviz.selectors import (
-    portfolios_list,
+    portfolios_list_response,
     assets_list_response,
     portfolio_value_list,
     weight_list
@@ -23,7 +23,7 @@ def get_assets(request):
 @require_http_methods(["GET"])
 @csrf_exempt
 def get_portfolios(request):
-    portfolios = portfolios_list()
+    portfolios = portfolios_list_response()
     return JsonResponse({
         "instances": portfolios}, status=200)
 

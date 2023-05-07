@@ -1,8 +1,10 @@
 import pandas as pd
 from typing import List
+import logging
 from dataclasses import dataclass
 from portfolioviz.models import (
   Asset,
+  MarketOperatingDate,
   Portfolio,
   PortfolioValue,
   Quantity,
@@ -18,6 +20,8 @@ from portfolioviz.selectors import (
 from portfolioviz.settings import DATA_PATH_NAME
 from portfolioviz.constants import INITIAL_VALUE
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class RawPortfolioData:
@@ -28,17 +32,17 @@ class RawPortfolioData:
 	dates: List[pd.Timestamp]
 	initial_date: pd.Timestamp
 	initial_value: int
+        
 
-
-def quantity_create(portfolio, asset, weight, value, price):
+def quantity_create(portfolio, asset, amount):
   Quantity.objects.create(
-    amount=weight * value / price,
+    amount=amount,
     portfolio=portfolio,
     asset=asset)
 
-def weight_create(portfolio, asset, date, share, value):
+def weight_create(portfolio, asset, date, raw_weight):
   Weight.objects.create(
-    amount = share / value,
+    amount=raw_weight,
     portfolio=portfolio,
     asset=asset,
     date=date
@@ -59,50 +63,79 @@ def price_create(amount, asset, date):
   )
 
 
-class DataExtractor:
-    
-    def extract_data(self) -> RawPortfolioData:
-      df_initial_weights = pd.read_excel(
-        DATA_PATH_NAME,
-        sheet_name='weights'
-      )
-      df_initial_weights.set_index(['Fecha', 'activos'], inplace=True)
-      
-      df_prices=pd.read_excel(DATA_PATH_NAME, sheet_name='Precios')
-      df_prices.set_index('Dates', inplace=True)
-      assets = df_prices.columns.tolist()
-      dates = df_prices.index.tolist()
-      initial_date = dates[0]
-      portfolios = df_initial_weights.columns.tolist()
-      
-      return RawPortfolioData(
-        assets,
-        portfolios,
-        df_initial_weights,
-        df_prices,
-        dates,
-        initial_date,
-        INITIAL_VALUE)
+class EntityRelations:
+
+  @staticmethod
+  def weight_from_share_value(share, value):
+    return share/value
+  
+  @staticmethod
+  def quantity_from_weight_value_price(weight, value, price):
+    return weight * value / price
+  
+  @staticmethod
+  def share_from_price_quantity(price, quantity):
+    return price * quantity
 
 
-class DataLoader:
-
+class EntityLoader:
+  
   def load_data(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("This might take a while...")
     self.portfolios_load(raw_data)
     self.assets_load(raw_data)
+    self.market_operating_dates_load(raw_data)
     self.quantities_load(raw_data)
-    self.value_weight_price_load(raw_data)
 
-  def portfolios_load(self, raw_data : RawPortfolioData):
+  
+  def portfolios_load(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("Loading portfolios")
     for portfolio_name in raw_data.portfolios:
       Portfolio.objects.create(name=portfolio_name)
 
   def assets_load(self, raw_data : RawPortfolioData):
+    logger.debug("Loading assets")
     for asset in raw_data.assets:
       Asset.objects.create(name=asset)
 
-  def quantities_load(self, raw_data : RawPortfolioData):
-     for portfolio_name in raw_data.portfolios:
+  def market_operating_dates_load(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("Loading market operating dates")
+    created_dates = []
+    for date_ts in raw_data.dates:
+      created_dates.append(MarketOperatingDate(
+        date=date_ts.date()
+      ))
+    for element, succesor in zip(created_dates, created_dates[:1]):
+      element.setNext(succesor)
+    for element in created_dates:
+      element.save()
+    
+  def prices_load(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("Loading market prices")
+    for tt_date in raw_data.dates:
+      date = tt_date.date()
+      for asset_name in raw_data.assets:
+        asset = asset_get(asset_name)
+        raw_price = raw_data.prices.loc[tt_date][asset_name]
+        
+        price_create(raw_price, asset, date)
+
+  def weights_initial_load(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("Loading initial weights")
+    for portfolio_name in raw_data.portfolios:
+      portfolio = portfolio_get(portfolio_name)
+      for asset in assets_list():
+        raw_weight = raw_data.initial_weights.loc[
+          (raw_data.initial_date, asset.name)][portfolio_name]
+        weight_create(
+          portfolio,
+          asset,
+          raw_data.initial_date.date(),
+          raw_weight)
+  
+  def quantities_load(self, raw_data : RawPortfolioData) -> None:
+    logger.debug("Calculating and loading quantities")
+    for portfolio_name in raw_data.portfolios:
       portfolio = portfolio_get(portfolio_name)
       
       for asset in assets_list():
@@ -112,32 +145,37 @@ class DataLoader:
           raw_data.initial_date][asset.name]
         
         quantity_create(
-          portfolio, asset, weight, raw_data.initial_value, price)
+          portfolio,
+          asset,
+          EntityRelations.quantity_from_weight_value_price(
+            weight, raw_data.initial_value, price))
           
-  def value_weight_price_load(self, raw_data: RawPortfolioData):
-    for portfolio_name in raw_data.portfolios:
-      portfolio = portfolio_get(portfolio_name)
-      for tt_date in raw_data.dates:
-        date = tt_date.date()
-        x_asset = {}
-        value = 0
-        for asset_name in raw_data.assets:
-          asset = asset_get(asset_name)
+  # def value_weight_load(self, raw_data: RawPortfolioData) -> None:
+  #   logger.debug("Calculating and loading portfolio values and asset weights")
+  #   for portfolio_name in raw_data.portfolios:
+  #     portfolio = portfolio_get(portfolio_name)
+  #     for tt_date in raw_data.dates:
+  #       date = tt_date.date()
+  #       x_asset = {}
+  #       value = 0
+  #       for asset_name in raw_data.assets:
+  #         asset = asset_get(asset_name)
           
-          quantity = quantity_get(portfolio,asset)
+  #         quantity = quantity_get(portfolio,asset)
           
-          raw_price = raw_data.prices.loc[tt_date][asset_name]
+  #         raw_price = raw_data.prices.loc[tt_date][asset_name]
           
-          price_create(raw_price, asset, date)
-          
-          x = raw_price * float(quantity.amount)
-          x_asset[asset_name] = x
-          value += x
+  #         x = raw_price * float(quantity.amount)
+  #         x_asset[asset_name] = x
+  #         value += x
         
-        portfolio_value_create(
-          portfolio, value, date)
+  #       portfolio_value_create(
+  #         portfolio, value, date)
         
-        for asset_name in raw_data.assets:
-            asset = asset_get(asset_name)
-            weight_create(
-              portfolio, asset, date, x_asset[asset_name], value)
+  #       for asset_name in raw_data.assets:
+  #           asset = asset_get(asset_name)
+  #           weight_create(
+  #             portfolio,
+  #             asset,
+  #             date,
+  #             EntityRelations.weight_from_share_value(x_asset[asset_name], value))

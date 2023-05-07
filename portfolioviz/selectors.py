@@ -17,16 +17,23 @@ def assets_list():
   return Asset.objects.all()
 
 def assets_list_response():
-  # TODO: refactor to use util
-  return list(map(lambda x: x.to_dict(), list(assets_list())))
+  return to_dict_mapper(list(assets_list()))
+
+def market_operating_date_get():
+  pass
+
+def market_operating_date_create():
+  pass
 
 def portfolio_get(name):
   return Portfolio.objects.get(name=name)
 
 def portfolios_list():
-  # TODO: refactor to use util
-  portfolios = Portfolio.objects.all()
-  return list(map(lambda x: x.to_dict(), list(portfolios)))
+  return Portfolio.objects.all()
+
+def portfolios_list_response():
+  portfolios = portfolios_list()
+  return to_dict_mapper(list(portfolios))
 
 def weights_get_date_range(portfolio, asset, date_from, date_to):
   return list(Weight.objects.filter(
@@ -48,8 +55,7 @@ def portfolio_value_list(
       date_to if date_to is not None else date.today()
     ],
     portfolio=portfolio)
-  # TODO: refactor to use util
-  return list(map(lambda x: x.to_dict(), list(values_raw)))
+  return to_dict_mapper(list(values_raw))
 
 def quantity_get(portfolio, asset):
   return Quantity.objects.get(
@@ -65,8 +71,7 @@ def weight_list(
   all_weights = []
   for asset in assets_list():
     weights_raw = weights_get_date_range(portfolio, asset, date_from, date_to)
-    # TODO: refactor to use util
-    all_weights += list(map(lambda x: x.to_dict(), list(weights_raw)))
+    all_weights += to_dict_mapper(list(weights_raw))
   
   by_date_grouping = {}
   for weight_response in all_weights:
@@ -76,3 +81,8 @@ def weight_list(
     by_date_grouping[date_str][
       weight_response["asset_name"]] = float(weight_response["amount"])
   return list(by_date_grouping.values())
+
+
+class PortfolioValuesService: pass
+
+class WeightDistributionService: pass
