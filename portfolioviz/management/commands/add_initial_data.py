@@ -16,7 +16,8 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
         if not self.dataExists():
-            self.entity_loader.load_data(
-                self.data_extractor.extract_data())
+            extracted_data = self.data_extractor.extract_data()
+            
+            self.entity_loader.populate_db(extracted_data)
         else:
             self.stdout.write('Initial data already exists')

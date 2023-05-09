@@ -5,7 +5,6 @@ import logging
 from dataclasses import dataclass
 from portfolioviz.models import (
   Asset,
-  MarketOperatingDate,
   Portfolio,
   PortfolioValue,
   Price,
@@ -14,20 +13,11 @@ from portfolioviz.models import (
   Share
 )
 from portfolioviz.selectors import (
-  asset_get,
-  assets_list,
-  portfolio_get,
-  portfolios_list,
-  price_get,
-  quantity_get,
-  market_operating_date_list,
-  market_operating_date_get,
-  share_get,
-  portfolio_value_get,
-  portfoliovizSelector
+  marketSelector,
+  portfolioSelector
 )
 from portfolioviz.settings import DATA_PATH_NAME
-from portfolioviz.constants import INITIAL_VALUE
+from portfolioviz.constants import INITIAL_VALUE, INITIAL_DATE
 
 logger = logging.getLogger(__name__)
 
@@ -43,38 +33,38 @@ class RawPortfolioData:
 	initial_value: int
         
 
-def quantity_create(portfolio, asset, amount, marketOperatingDate):
+def quantity_create(portfolio, asset, amount, date):
   Quantity.objects.create(
     amount=amount,
     portfolio=portfolio,
     asset=asset,
-    marketOperatingDate = marketOperatingDate)
+    date = date)
 
-def weight_create(portfolio, asset, market_date, raw_weight):
+def weight_create(portfolio, asset, date, raw_weight):
   Weight.objects.create(
     amount=raw_weight,
     portfolio=portfolio,
     asset=asset,
-    marketOperatingDate=market_date)
+    date=date)
 
-def portfolio_value_create(portfolio, market_date, amount):
+def portfolio_value_create(portfolio, date, amount):
   PortfolioValue.objects.create(
     amount=amount,
     portfolio=portfolio,
-    marketOperatingDate=market_date)
+    date=date)
 
-def price_create(amount, asset, market_date):
+def price_create(amount, asset, date):
   Price.objects.create(
     amount=amount,
     asset=asset,
-    marketOperatingDate=market_date)
+    date=date)
   
-def share_create(portfolio, asset, market_operating_date, amount):
+def share_create(portfolio, asset, date, amount):
   Share.objects.create(
     portfolio=portfolio,
     asset=asset,
     amount=amount,
-    marketOperatingDate=market_operating_date)
+    date=date)
 
 
 class EntityRelations:
@@ -124,13 +114,15 @@ class EntityLoader:
     logger.debug("This might take a while...")
     self.portfolios_load(raw_data)
     self.assets_load(raw_data)
-    self.market_operating_dates_load(raw_data)
     self.prices_load(raw_data)
     self.quantities_initial_load(raw_data)
-    self.quantities_load_all_periods()
-    self.share_load_all_periods()
-    self.portfolio_values_load_all_periods()
-    self.weights_load_all_periods()
+    self.quantities_load_all_periods(raw_data)
+    self.share_load_all_periods(raw_data)
+    self.portfolio_values_load_all_periods(raw_data)
+    self.weights_load_all_periods(raw_data)
+
+  def all_dates(self, raw_data: RawPortfolioData):
+    return list(map(lambda x: x.date(), raw_data.dates))
   
   def portfolios_load(self, raw_data: RawPortfolioData) -> None:
     logger.debug("Loading portfolios")
@@ -141,41 +133,27 @@ class EntityLoader:
     logger.debug("Loading assets")
     for asset in raw_data.assets:
       Asset.objects.create(name=asset)
-  
-  def market_operating_dates_load(self, raw_data: RawPortfolioData) -> None:
-    logger.debug("Loading market operating dates")
-    created_dates = []
-    for date_ts in raw_data.dates:
-      current = MarketOperatingDate(
-        date=date_ts.date()
-      )
-      current.save()
-      created_dates.append(current)
-    for element, succesor in zip(created_dates, created_dates[:1]):
-      element.setNext(succesor)
-    
+      
   def prices_load(self, raw_data: RawPortfolioData) -> None:
     logger.debug("Loading market prices")
     for tt_date in raw_data.dates:
-      marketOperatingDate = market_operating_date_get(tt_date.date())
       for asset_name in raw_data.assets:
-        asset = asset_get(asset_name)
+        asset = marketSelector.asset_get(name=asset_name)
         raw_price = raw_data.prices.loc[tt_date][asset_name]
-        price_create(raw_price, asset, marketOperatingDate)
+        price_create(raw_price, asset, tt_date.date())
     
   def quantities_initial_load(self, raw_data: RawPortfolioData) -> None:
     logger.debug("Calculating and loading initial quantities")
     for portfolio_name in raw_data.portfolios:
-      portfolio = portfolio_get(portfolio_name)
-      
-      for asset in assets_list():
+      portfolio = portfolioSelector.portfolio_get(name=portfolio_name)
+      for asset in marketSelector.assets_list():
         weight = raw_data.initial_weights.loc[
           (raw_data.initial_date, asset.name)][portfolio_name]
         price = raw_data.prices.loc[
           raw_data.initial_date][asset.name]
         amount = EntityRelations.quantity_from_weight_value_price(
             weight, raw_data.initial_value, price)
-        initial_operating_date = portfoliovizSelector.market_selector.fetch_initial_operating_date()
+        initial_operating_date = INITIAL_DATE
         
         quantity_create(
           portfolio,
@@ -183,18 +161,19 @@ class EntityLoader:
           amount,
           initial_operating_date)
         
-  def quantities_load_all_periods(self) -> None:
+  def quantities_load_all_periods(self, raw_data: RawPortfolioData) -> None:
     logger.debug("Calculating and loading remaining quantities")
-    initial_market_date = portfoliovizSelector.market_selector.fetch_initial_operating_date()
+    initial_market_date = INITIAL_DATE
     
-    for portfolio in portfolios_list():
-      for asset in assets_list():
+    for portfolio in portfolioSelector.portfolios_list():
+      for asset in marketSelector.assets_list():
         previous_date = initial_market_date
-        for market_date in market_operating_date_list():
-          if market_date.date==initial_market_date.date:
+        for dt_date in self.all_dates(raw_data):
+          if dt_date==initial_market_date:
             continue
           
-          previous_quantity = quantity_get(portfolio, asset, previous_date)
+          previous_quantity = portfolioSelector.quantity_get(
+            portfolio, asset, previous_date)
           
           ## TODO : complete
           previous_transactions_amount = 0
@@ -203,43 +182,43 @@ class EntityLoader:
             portfolio,
             asset,
             previous_quantity.amount + previous_transactions_amount,
-            market_date)
-          previous_date = market_date
+            dt_date)
+          previous_date = dt_date
           
-  def share_load_all_periods(self):
+  def share_load_all_periods(self, raw_data: RawPortfolioData):
     logger.debug("Loading shares")
-    for portfolio in portfolios_list():
-      for market_date in market_operating_date_list():
-        for asset in assets_list():
-          price = price_get(asset, market_date)
-          quantity = quantity_get(portfolio, asset, market_date)
+    for portfolio in portfolioSelector.portfolios_list():
+      for dt_date in self.all_dates(raw_data):
+        for asset in marketSelector.assets_list():
+          price = marketSelector.price_get(asset, dt_date)
+          quantity = portfolioSelector.quantity_get(portfolio, asset, dt_date)
           share_create(
             portfolio,
             asset,
-            market_date,
+            dt_date,
             EntityRelations.share_from_price_quantity(
               price.amount, quantity.amount))
   
-  def portfolio_values_load_all_periods(self):
+  def portfolio_values_load_all_periods(self, raw_data: RawPortfolioData):
     logger.debug("Loading portfolio values")
-    for portfolio in portfolios_list():
-      for market_date in market_operating_date_list():
+    for portfolio in portfolioSelector.portfolios_list():
+      for dt_date in self.all_dates(raw_data):
         value_amount = 0
-        for asset in assets_list():
-          share = share_get(portfolio, asset, market_date)
+        for asset in marketSelector.assets_list():
+          share = portfolioSelector.share_get(portfolio, asset, dt_date)
           value_amount += share.amount
-        portfolio_value_create(portfolio, market_date, value_amount)
+        portfolio_value_create(portfolio, dt_date, value_amount)
   
-  def weights_load_all_periods(self) -> None:
+  def weights_load_all_periods(self, raw_data: RawPortfolioData) -> None:
     logger.debug("Loading asset weights")
-    for portfolio in portfolios_list():
-      for market_date in market_operating_date_list():
-        value_amount = portfolio_value_get(portfolio, market_date).amount
-        for asset in assets_list():
-          share = share_get(portfolio, asset, market_date)
+    for portfolio in portfolioSelector.portfolios_list():
+      for dt_date in self.all_dates(raw_data):
+        value = portfolioSelector.portfolio_value_get(portfolio, dt_date)
+        for asset in marketSelector.assets_list():
+          share = portfolioSelector.share_get(portfolio, asset, dt_date)
           weight_create(
             portfolio,
             asset,
-            market_date,
+            dt_date,
             EntityRelations.weight_from_share_value(
-              share.amount, value_amount))
+              share.amount, value.amount))
