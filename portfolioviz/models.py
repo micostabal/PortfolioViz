@@ -44,6 +44,7 @@ class MarketOperatingDate(PortfolioBaseModel):
 
 
 class Share(PortfolioBaseModel):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=6, max_digits=40)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     marketOperatingDate = models.ForeignKey(
