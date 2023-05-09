@@ -7,6 +7,8 @@ media
 
 .DS_Store
 
+app/portfolioviz/static/datos.xlsx
+
 view/node_modules
 view/.pnp
 view/.pnp.js
