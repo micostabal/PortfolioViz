@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from portfolioviz.models import Portfolio
-from portfolioviz.services import DataExtractor, EntityLoader
+from portfolioviz.services import dataExtractor, entityLoader
 
 
 class Command(BaseCommand):
@@ -8,8 +8,8 @@ class Command(BaseCommand):
     
     def __init__(self) -> None:
         super().__init__()
-        self.data_extractor = DataExtractor()
-        self.entity_loader = EntityLoader()
+        self.data_extractor = dataExtractor
+        self.entity_loader = entityLoader
     
     def dataExists(self):
         return Portfolio.objects.exists()

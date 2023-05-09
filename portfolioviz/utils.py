@@ -14,7 +14,6 @@ def to_dict_mapper(iterable: Iterable):
     return list(map(lambda x: x.to_dict(), iterable))
 
 
-## https://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
