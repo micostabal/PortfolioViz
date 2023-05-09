@@ -5,9 +5,8 @@ __pycache__
 db.sqlite3
 media
 
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.DS_Store
 
-# dependencies
 view/node_modules
 view/.pnp
 view/.pnp.js
