@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   AreaChart,
@@ -40,12 +39,11 @@ const PortfoliosInput = (props) => {
 const DateInput = ({name, max, min, onChange}) => {
   return (
     <>
-      <label style={{marginLeft: '1em'}} for="cars">{name}:</label>
+      <label style={{marginLeft: '1em'}} for="dates">{name}:</label>
       <input
         style={{marginLeft: '1em'}}
         type="date"
         id="start"
-        name="viz-start"
         onChange={onChange}
         min={min ? min : START_DEFAULT}
         max={max ? max : END_DEFAULT}></input>
@@ -102,16 +100,25 @@ function App() {
   };
   
   return (
-    <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
-      <h1 className="text-heading">
+    <div style={{
+        display: "flex", // TODO: Move to App.css file
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: '#D4ADFC'}}>
+
+      <h1 className="custom-title">
         Portfolio Visualization
       </h1>
 
-      <div style={{
+      <div className="custom-title" style={{ // TODO: Move to App.css file
           display: 'flex', 
           marginBottom: '1em',
           marginRight: '1em',
-          flexDirection: "row"
+          flexDirection: "row",
+          borderRadius: '1em',
+          padding: '1em',
+          borderColor: "#5C469C"  
         }}>
         <PortfoliosInput portfolios={portfolios} onChange={(selection) => {
           setPortfolioId(selection.target.value);
@@ -123,11 +130,20 @@ function App() {
           setEndDate(newValue.target.value);
         }}/>
       </div>
-      
+
       <div style={{width: "75%", alignSelf: "center"}}>
-        <h2 className="text-heading">
-          Market value of Portfolio { portfolioId ? portfolioId : 1}
+        <h2 className="custom-title"> 
+        Market value of Portfolio { portfolioId ? portfolioId : 1}
         </h2>
+      </div>
+      
+      <div style={{
+          width: "75%",
+          alignSelf: "center",
+          backgroundColor: "white",
+          borderRadius: '1em',
+          padding: '1em'}}>
+        
         <ResponsiveContainer width="100%" aspect={2}>
             <LineChart data={portfolioValues}
               margin={{ left: 50, right: 50, bottom: 50 }}
@@ -140,7 +156,7 @@ function App() {
                   margin={{top: 3, bottom: 30}}>
                 </XAxis>
                 <YAxis tickCount={10} domain={[
-                  750000000,
+                  750000000, // Harcoded, change
                   1050000000
                 ]}></YAxis>
                 <Legend />
@@ -150,9 +166,9 @@ function App() {
             </LineChart>
         </ResponsiveContainer>
       </div>
-
+      
       <div style={{width: "75%", alignSelf: "center"}}>
-        <h2 className="text-heading">
+        <h2 className="custom-title"> 
           Distribution by weights
         </h2>
       </div>
@@ -161,13 +177,16 @@ function App() {
         display: "flex",
         flexDirection: "row",
         marginTop: '2em',
-        justifyContent: "center"
+        justifyContent: "center",
+        borderRadius: '1em',
+        padding: '1em',
+        backgroundColor: "white"
       }}>
         <div>
           <ResponsiveContainer width={720} aspect={1}>
             <AreaChart
               data={weights}
-              margin={{
+              margin={{ // TODO: Move to App.css file
                 top: 10,
                 right: 30,
                 left: 0,
@@ -181,7 +200,7 @@ function App() {
                 tickFormatter={tickFormatter}
                 tick={{ fontSize: 8, lineHeight: 30 }}
               />
-              <YAxis domain={[-0.01, 1.01]} />
+              <YAxis domain={[0, 1.0001]} />
               <Tooltip />
               {
                 weights.length>0 ? Object.keys(weights[0])
@@ -200,6 +219,8 @@ function App() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+      </div>
+      <div style={{height: '4em'}}>
       </div>
     </div>
   );

@@ -33,10 +33,12 @@ class RawPortfolioData:
 	initial_date: pd.Timestamp
 	initial_value: int
 
+
 class MarketService(metaclass=Singleton):
   
   def asset_create(self, name):
     Asset.objects.create(name=name)
+
 
 class PortfolioService(metaclass=Singleton):
   
