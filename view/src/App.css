@@ -15,10 +15,6 @@ label {
 }
 
 select {
-  -webkit-padding-end: 20px;
-  -moz-padding-end: 20px;
-  -webkit-padding-start: 2px;
-  -moz-padding-start: 2px;
   background-position: center right;
   background-repeat: no-repeat;
   border: 1px solid #5C469C;
@@ -35,10 +31,6 @@ select {
 }
 
 input {
-  -webkit-padding-end: 20px;
-  -moz-padding-end: 20px;
-  -webkit-padding-start: 2px;
-  -moz-padding-start: 2px;
   background-position: center right;
   background-repeat: no-repeat;
   border: 1px solid #5C469C;

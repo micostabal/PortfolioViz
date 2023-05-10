@@ -1,10 +1,14 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.http import Http404, HttpResponseBadRequest
+from rest_framework.views import exception_handler
+from rest_framework import exceptions
 from portfolioviz.selectors import (
     marketSelector,
     portfolioSelector
 )
+from portfolioviz.exceptions import BadDateFormatException
 from portfolioviz.utils import parse_request_date, parse_query_param, to_dict_mapper
 
 @require_http_methods(["GET"])
@@ -60,3 +64,16 @@ def get_weights(request, portfolio_id):
     return JsonResponse({
         "portfolio_id": portfolio_id,
         "weights": list(by_date_grouping.values())}, status=200)
+
+
+def portfolioviz_exception_handler(exc, ctx):
+  print("-------------------------")
+  if isinstance(exc, BadDateFormatException):
+      exc = HttpResponseBadRequest()
+  
+  if isinstance(exc, Http404):
+      exc = exceptions.NotFound()
+  
+  response = exception_handler(exc, ctx)
+  
+  return response

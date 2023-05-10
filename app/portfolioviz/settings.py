@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'portfolioviz',
     'corsheaders',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,10 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'portfolioviz.views.portfolioviz_exception_handler'
+}
 
 WSGI_APPLICATION = 'portfolioviz.wsgi.application'
 

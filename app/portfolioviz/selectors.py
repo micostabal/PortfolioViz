@@ -1,4 +1,5 @@
 from datetime import date
+from django.http import Http404
 from portfolioviz.models import (
   Asset,
   Portfolio,
@@ -34,8 +35,11 @@ class PortfolioSelector(metaclass=Singleton):
     self.market_selector = market_selector
   
   def portfolio_get(self, **kwgs):
-    return Portfolio.objects.get(**kwgs)
-  
+    try:
+      return Portfolio.objects.get(**kwgs)
+    except Portfolio.DoesNotExist:
+      raise Http404(f"No such portfolio: {str(kwgs)}")
+
   def portfolios_list(self):
     return Portfolio.objects.all()
   
